@@ -43,7 +43,7 @@ async def уточни(ctx, args):
         await ctx.message.channel.send(f'```{datetime.datetime.now().hour}:{datetime.datetime.now().minute}```')
 
 
-async def on_off(ctx):
+async def on_off():
     global t_f
     t_f = True
 
@@ -77,7 +77,7 @@ async def play(ctx, url : str):
             for file in os.listdir('./'):
                 if file.endswith('.mp3'):
                     os.rename(file, 'song.mp3')
-            voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: on_off(ctx))
+            voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: on_off())
             voice.source = discord.PCMVolumeTransformer(voice.source)
             voice.source.volume = 1
         except Exception:
