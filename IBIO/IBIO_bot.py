@@ -6,10 +6,11 @@ from discord.utils import get
 import youtube_dl
 import os
 
-TOKEN = "ODM0Nzc1NzE0MDExOTM4ODY2.YIFzdw.xtrzUpaBwMEn4tvzWqxyCXpzjIQ"
+TOKEN = "ODM0Nzc1NzE0MDExOTM4ODY2.YIFzdw.372IlnxiO1DRjKDajg-wBAtxhEU"
 ibio = commands.Bot(command_prefix='!')
 const_month = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
                'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']
+t_f = True
 
 
 @ibio.event
@@ -42,34 +43,51 @@ async def уточни(ctx, args):
         await ctx.message.channel.send(f'```{datetime.datetime.now().hour}:{datetime.datetime.now().minute}```')
 
 
+async def on_off(ctx):
+    global t_f
+    t_f = True
+
+
+
 @ibio.command()
 async def play(ctx, url : str):
-    song_there = os.path.isfile('song.mp3')
-    try:
-        if song_there:
-            os.remove('song.mp3')
-    except PermissionError:
-        pass
-    await ctx.message.channel.send('Подождите...\n'
-                                   '```!!!НЕТ ОЧЕРЕДИ, ВАШЕЙ МУЗЫКИ НЕ БУДЕТ ПОСЛЕ ТЕКУЩЕЙ!!!``` ')
-    voice = get(ibio.voice_clients, guild=ctx.guild)
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192'
-        }],
-    }
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
-    for file in os.listdir('./'):
-        if file.endswith('.mp3'):
-            name = file
-            os.rename(file, 'song.mp3')
-    voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: print(f'[log] {name}, ok'))
-    voice.source = discord.PCMVolumeTransformer(voice.source)
-    voice.source.volume = 1
+    global t_f, voice
+    if t_f:
+        try:
+            t_f = False
+            song_there = os.path.isfile('song.mp3')
+            try:
+                if song_there:
+                    os.remove('song.mp3')
+            except PermissionError:
+                pass
+            await ctx.message.channel.send('Подождите...\n'
+                                           '```!!!НЕТ ОЧЕРЕДИ, ВАШЕЙ МУЗКИ НЕ БУДЕТ ПОСЛЕ ТЕКУЩЕЙ!!!``` ')
+            voice = get(ibio.voice_clients, guild=ctx.guild)
+            ydl_opts = {
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192'
+                }],
+            }
+            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+            for file in os.listdir('./'):
+                if file.endswith('.mp3'):
+                    os.rename(file, 'song.mp3')
+            voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: on_off(ctx))
+            voice.source = discord.PCMVolumeTransformer(voice.source)
+            voice.source.volume = 1
+        except Exception:
+            pass
+
+
+@ibio.command()
+async def skip(ctx):
+    global voice
+    voice.source.speed = 100000000
 
 
 ibio.run(TOKEN)
