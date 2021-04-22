@@ -6,7 +6,7 @@ from discord.utils import get
 import youtube_dl
 import os
 
-TOKEN = "ODM0Nzc1NzE0MDExOTM4ODY2.YIFzdw.372IlnxiO1DRjKDajg-wBAtxhEU"
+TOKEN = ""
 ibio = commands.Bot(command_prefix='!')
 const_month = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
                'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']
