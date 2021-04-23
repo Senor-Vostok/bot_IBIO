@@ -1,16 +1,16 @@
 import discord
-from random import randint, choice
 from discord.ext import commands
 import datetime
 from discord.utils import get
 import youtube_dl
 import os
 
-TOKEN = ""
+TOKEN = "ODM0Nzc1NzE0MDExOTM4ODY2.YIFzdw.amHT-daMEDuLRhQIxaxwMw09mkc"
 ibio = commands.Bot(command_prefix='!')
 const_month = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
                'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']
 t_f = True
+stopped = list()
 
 
 @ibio.event
@@ -43,15 +43,42 @@ async def уточни(ctx, args):
         await ctx.message.channel.send(f'```{datetime.datetime.now().hour}:{datetime.datetime.now().minute}```')
 
 
-async def on_off():
-    global t_f
+def on_off(ctx):
+    global t_f, stopped, voice
     t_f = True
-
+    os.remove('song.mp3')
+    print('Закон.')
+    stopped.remove(stopped[0])
+    if len(stopped) != 0:
+        t_f = False
+        url = stopped[0]
+        voice = get(ibio.voice_clients, guild=ctx.guild)
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192'
+            }],
+        }
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+        for file in os.listdir('./'):
+            if file.endswith('.mp3'):
+                os.rename(file, 'song.mp3')
+        voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: on_off(ctx))
+        voice.source = discord.PCMVolumeTransformer(voice.source)
+        voice.source.volume = 1
 
 
 @ibio.command()
-async def play(ctx, url : str):
-    global t_f, voice
+async def включи(ctx, url : str):
+    global t_f, voice, stopped
+    stopped.append(url)
+    print(stopped)
+    url = stopped[0]
+    if len(stopped) >= 2:
+        await ctx.message.channel.send(f'Сейчас играет:\n{stopped[0]}\nследующий:\n{stopped[1]}\n\n```Пропишите !следующий для пропуска музыки```')
     if t_f:
         try:
             t_f = False
@@ -61,8 +88,7 @@ async def play(ctx, url : str):
                     os.remove('song.mp3')
             except PermissionError:
                 pass
-            await ctx.message.channel.send('Подождите...\n'
-                                           '```!!!НЕТ ОЧЕРЕДИ, ВАШЕЙ МУЗКИ НЕ БУДЕТ ПОСЛЕ ТЕКУЩЕЙ!!!``` ')
+            await ctx.message.channel.send('Подождите...')
             voice = get(ibio.voice_clients, guild=ctx.guild)
             ydl_opts = {
                 'format': 'bestaudio/best',
@@ -77,7 +103,7 @@ async def play(ctx, url : str):
             for file in os.listdir('./'):
                 if file.endswith('.mp3'):
                     os.rename(file, 'song.mp3')
-            voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: on_off())
+            voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: on_off(ctx))
             voice.source = discord.PCMVolumeTransformer(voice.source)
             voice.source.volume = 1
         except Exception:
@@ -85,9 +111,9 @@ async def play(ctx, url : str):
 
 
 @ibio.command()
-async def skip(ctx):
+async def следующий(ctx):
     global voice
-    voice.source.speed = 100000000
+    voice.stop()
 
 
 ibio.run(TOKEN)
